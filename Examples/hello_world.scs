@@ -1,0 +1,15 @@
+
+namespace screeper_helloworld
+{
+	
+	function hello_to_me()
+	{
+		write "say Hello @s!";
+	}
+	
+	function load()
+	{
+		write "say Hello world!";
+	}
+	
+}
