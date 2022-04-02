@@ -1,0 +1,33 @@
+namespace std
+{
+	
+	function chat(...)
+	{
+		var isLoaded;
+		
+		write `execute store success storage `, __STORAGE(isLoaded), ` `, isLoaded, 
+			` byte 1 run forceload query 0 0`;
+		if (not isLoaded)
+			write `forceload add 0 0`;
+		
+		write `setblock 0 -64 0 minecraft:oak_wall_sign{Text1:''}`;
+		
+		for (arg in __ARGS)
+		{
+			write `data merge block 0 -64 0 {Text1:'[{"block":"0 -64 0","nbt":"Text1","interpret":true},{"storage":"`, 
+				__STORAGE(arg), `","nbt":"`, arg, `"}]'}`;
+		}
+		
+		write `tellraw @a {"block":"0 -64 0","nbt":"Text1"}`;
+		write `setblock 0 -64 0 minecraft:bedrock`;
+		
+		if (not isLoaded)
+			write `forceload remove 0 0`;
+	}
+	
+	function tellraw_all(componant)
+	{
+		write `tellraw @a {"storage":"`, __STORAGE(componant), `","nbt":"`, componant, `","interpret":true}`;
+	}
+	
+}
