@@ -1,14 +1,12 @@
 #macro M_CHAT(...)
-write `tellraw @a [`
+write `tellraw @a [""`
 
-#repeat __ARG __ARGS
+#repeat ARG __ARGS
 
-#if TOKEN_TYPE(__ARG) == "IDENTIFIER"
-,`{"storage":"`,__STORAGE(__ARG),`","nbt":"`,__ARG,`"}`
-#elif TOKEN_TYPE(__ARG) == "STRING_LITERAL"
-,`{"text":"`,__ARG,`"}`
+#if __TYPE(ARG) == "REF"
+, `,{"storage":"`, __STORAGE(ARG), `","nbt":"`, ARG, `"}`
 #else
-,`{"text":"__ARG"}`
+, `,{"text":"`, ARG, `"}`
 #endif
 
 #endrepeat
