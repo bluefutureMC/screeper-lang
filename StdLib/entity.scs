@@ -1,6 +1,14 @@
+#include "entity.sch"
+
 namespace std
-{
-	
-	
-	
+{	
+	class marker
+	{
+		
+		constructor(x, y, z)
+		{
+			
+		}
+		
+	}	
 }

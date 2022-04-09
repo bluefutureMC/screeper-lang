@@ -28,15 +28,14 @@ SELECTOR(`e`
 )
 #endmacro
 
-#macro SUMMON(out, type, position, nbt)
+#macro SUMMON(out, type, position)
 write `summon `, type, ` `
 #ifdef position
 , position
 #else
 , `~ ~ ~`
 #endif
-#ifdef nbt
-, ` `, nbt
-#endif
-;
+, ` {Tags:[screeper-summon]}`;
+write `data modify storage `, __STORAGE(out), ` `, out, ` set from entity @e[tag=screeper-summon,limit=1] UUID`;
+write `tag @e[tag=screeper-summon] remove screeper-summon`;
 #endmacro
