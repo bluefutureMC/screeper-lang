@@ -4,7 +4,10 @@ use super::tokens::Token;
 pub enum Path {
     ExpressionHead,
     Identifier(Token),
-    Member(Box<Path>, Token)
+    Direct{storage_type: String, source: String, path: String},
+    Member(Box<Path>, Token),
+    Element(Box<Path>, Token),
+    Quary(Box<Path>, HashMap<String, ConstExpression>)
 }
 
 pub enum RefExpression {
