@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 use super::tokens::Token;
 
+pub trait Eval {
+    fn eval(&self) -> String;
+}
+
 pub enum Path {
     ExpressionHead,
     Identifier(Token),
@@ -10,7 +14,21 @@ pub enum Path {
     Quary(Box<Path>, HashMap<String, ConstExpression>)
 }
 
-pub enum RefExpression {
+pub enum ValueType {
+    Infer,
+    Numeric,
+    String,
+    Compound,
+    List,
+    Class(Path)
+}
+
+pub struct RefExpression {
+    pub path: Path,
+    pub varient: RefExpressionVarient
+}
+
+pub enum RefExpressionVarient {
     Path(Path),
     BinaryAssign(Box<RefExpression>, Token, Box<Expression>),
     PostUniOperation(Box<RefExpression>, Token),
@@ -28,7 +46,12 @@ pub enum ConstExpression {
     Tuple(Box<ConstExpression>)
 }
 
-pub enum Expression {
+pub struct Expression {
+    pub value_type: ValueType,
+    pub varient: ExpressionVarient
+}
+
+pub enum ExpressionVarient {
     Ref(RefExpression),
     Object(HashMap<Token, Expression>),
     List(Vec<Expression>),
