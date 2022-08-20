@@ -1,17 +1,42 @@
 use std::collections::HashMap;
 use super::tokens::Token;
 
+/// Trait for types that can be evaluated into string like commands / values
+/// 
+/// # How to implement
+/// ```
+/// use screeper::compiler::expressions::Eval;
+/// 
+/// struct SayCommand {
+///     msgs: Vec<String>
+/// }
+/// 
+/// impl Eval for SayCommand {
+///     fn eval(&self) -> String {
+///         fullString = String::from("say ");
+///         for msg in self.msgs {
+///             fullString += msg + " ";
+///         }
+///         fullString
+///     }
+/// }
+/// ```
 pub trait Eval {
     fn eval(&self) -> String;
+    // fn eval_into(&self) // Eval into a file
 }
 
-pub enum Path {
+pub struct Path {
+    value_type: ValueType,
+    varient: PathVarient
+}
+
+pub enum PathVarient {
     ExpressionHead,
     Identifier(Token),
     Direct{storage_type: String, source: String, path: String},
     Member(Box<Path>, Token),
-    Element(Box<Path>, Token),
-    Quary(Box<Path>, HashMap<String, ConstExpression>)
+    Element(Box<Path>, ConstExpression)
 }
 
 pub enum ValueType {
@@ -20,7 +45,7 @@ pub enum ValueType {
     String,
     Compound,
     List,
-    Class(Path)
+    Class(Box<Path>)
 }
 
 pub struct RefExpression {
@@ -33,8 +58,6 @@ pub enum RefExpressionVarient {
     BinaryAssign(Box<RefExpression>, Token, Box<Expression>),
     PostUniOperation(Box<RefExpression>, Token),
     PreUniOperation(Token, Box<RefExpression>),
-    Indexing(Box<Expression>, ConstExpression),
-    InnerValue(Box<Expression>, Token),
     Cast(Path, Box<Expression>)
 }
 
