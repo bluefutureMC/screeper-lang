@@ -14,7 +14,7 @@ use std::io::{Read, BufReader, BufRead};
 /// impl Preprocessor for PrefixPreprocessor {
 ///     fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>) -> bool {
 ///         if !skip && !self.prefix.is_empty() && !file.current().starts_with(&self.prefix) {
-///             file.append_lines(vec![format!("{} {}", self.prefix, file.current)]);
+///             file.reprocess_lines(vec![format!("{} {}", self.prefix, file.current)]);
 ///             self.skip = true // reappend line and force reprocessing
 ///         }
 ///         else {
@@ -46,6 +46,47 @@ pub trait Preprocessor {
     fn activate<'a, R: Read>(&mut self, params: Vec<String>, file: &mut PreprocessIterator<'a, R>);
 }
 
+/// An iterator used by preprocessors to iterate through lines of a file and insert new lines at the top.
+/// 
+/// # Examples
+/// ```
+/// use screeper::preprocessor::PreprocessIterator;
+/// use std::fs::File;
+/// use std::io::BufReader;
+/// 
+/// /* test.txt
+/// kevin
+/// brian
+/// joe
+/// millie
+/// bobbie
+/// joe
+///  */
+/// 
+/// let file = File::open("test.txt").unwrap();
+/// let mut reader = BufReader::new(file);
+/// let mut iter = PreprocessIterator::new(&mut reader);
+/// 
+/// for line in iter {
+///     println!("{}", line);
+///     if line.starts_with("joe") { 
+///         iter.reprocess_lines(vec!["who is joe?", "JOE MAMA!"]);
+///     }
+/// }
+/// 
+/// /* Expected output
+/// kevin
+/// brian
+/// joe
+/// who is joe?
+/// JOE MAMA!
+/// millie
+/// bobbie
+/// joe
+/// who is joe?
+/// JOE MAMA!
+///  */
+/// ```
 pub struct PreprocessIterator<'a, R: Read> {
     current_line: String,
     reader: &'a mut BufReader<R>,
@@ -53,7 +94,7 @@ pub struct PreprocessIterator<'a, R: Read> {
 }
 
 impl<'a, R: Read> PreprocessIterator<'a, R> {
-    fn new(reader: &'a mut BufReader<R>) -> PreprocessIterator<R> {
+    pub fn new(reader: &'a mut BufReader<R>) -> PreprocessIterator<R> {
         PreprocessIterator {
             current_line: String::new(),
             reprocess_lines: vec![],
@@ -61,11 +102,13 @@ impl<'a, R: Read> PreprocessIterator<'a, R> {
         }
     }
 
+    /// Retrieves the current processed line without advancing the iterator
     pub fn current(&self) -> &String {
         &self.current_line
     }
 
-    pub fn append_lines(&mut self, mut lines: Vec<String>) {
+    /// Adds new lines the iterator will iterate through before moving on to the next line
+    pub fn reprocess_lines(&mut self, mut lines: Vec<String>) {
         lines.reverse();
         self.reprocess_lines.append(&mut lines);
     }
