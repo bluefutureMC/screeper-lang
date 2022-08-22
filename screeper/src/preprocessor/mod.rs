@@ -1,7 +1,48 @@
 use std::io::{Read, BufReader, BufRead};
 
+/// An interface for preprocessor componants
+/// 
+/// # How to implement
+/// ```
+/// use screeper::preprocessor::Preprocessor;
+/// 
+/// struct PrefixPreprocessor {
+///     prefix: String,
+///     skip: bool
+/// }
+/// 
+/// impl Preprocessor for PrefixPreprocessor {
+///     fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>) -> bool {
+///         if !skip && !self.prefix.is_empty() && !file.current().starts_with(&self.prefix) {
+///             file.append_lines(vec![format!("{} {}", self.prefix, file.current)]);
+///             self.skip = true // reappend line and force reprocessing
+///         }
+///         else {
+///             self.skip = false
+///         }
+///     }
+/// 
+///     fn activate<'a, R: Read>(&mut self, params: Vec<String>, file: &mut PreprocessIterator<'a, R>) {
+///         if params.is_empty() {
+///             self.prefix.clear();
+///         }
+///         else {
+///             self.prefix = params[0];
+///         }
+///     }
+/// }
+/// ```
 pub trait Preprocessor {
-    fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>);
+    /// Processes the current line the file is at. 
+    /// Returns `true` if all preceding preprocessors should skip the current line.
+    fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>) -> bool;
+
+    /// Runs the preprocessor header associated with the preprocessor.
+    /// 
+    /// The `params` parameter contains all the parameters that were given to the activation.
+    /// For example, if this was the activation line:
+    /// `#<name> hello 1 "multi word"`
+    /// params will contain: `["hello", "1", "multi word"]`
     fn activate<'a, R: Read>(&mut self, params: Vec<String>, file: &mut PreprocessIterator<'a, R>);
 }
 
@@ -48,3 +89,4 @@ impl<'a, R: Read> Iterator for PreprocessIterator<'a, R> {
         }
     }
 }
+
