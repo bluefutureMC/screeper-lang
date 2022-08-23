@@ -134,16 +134,29 @@ impl Iterator for PreprocessIterator {
     }
 }
 
+pub fn preprocess_file(input_path: &str, output_path: &str, preprocessors: Vec<Box<dyn Preprocessor>>) {
+
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{fs, fs::File, io::{Write, Read}};
 
     struct PrefixPreprocessor {
         prefix: String,
         skip: bool
     }
     
+    impl PrefixPreprocessor {
+        pub fn new(prefix: &str) -> PrefixPreprocessor {
+            PrefixPreprocessor {
+                prefix: String::from(prefix),
+                skip: false
+            }
+        }
+    }
+
     impl Preprocessor for PrefixPreprocessor {
         fn process(&mut self, file: &mut PreprocessIterator) -> bool {
             self.skip = !self.skip 
@@ -167,8 +180,34 @@ mod tests {
         }
     }
 
+    fn create_test_file() {
+        fs::create_dir("tests").expect("Unable to create test folder");
+        let mut file = File::create("tests/test.txt").expect("Unable to create test file");
+
+        file.write("molly\njoe\nfrank\nlisa\njoe".as_bytes()).expect("Unable to write to test file!");
+    }
+    
     #[test]
     fn test_demo_preprocessor() {
-        
+        create_test_file();
+
+        preprocess_file("tests/test.txt", "tests/test_out.txt", 
+                        vec![Box::new(PrefixPreprocessor::new("- "))]);
+
+        let mut file = match File::open("tests/test_out.txt") {
+            Ok(file) => file,
+            Err(_) => {
+                fs::remove_dir_all("tests").unwrap_or(());
+                panic!("Output file was not created successfully or cannot be opened");
+            }
+        };
+        let mut file_as_string = String::new();
+
+        if let Err(_) = file.read_to_string(&mut file_as_string) {
+            fs::remove_dir_all("tests").unwrap_or(());
+            panic!("Unable to read from output file");
+        }
+
+        assert_eq!(file_as_string, "- molly\n- joe\n- frank\n- lisa\n- joe");
     }
 }
