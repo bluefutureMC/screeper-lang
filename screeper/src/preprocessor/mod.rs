@@ -13,21 +13,23 @@ use std::io::BufRead;
 /// 
 /// impl Preprocessor for PrefixPreprocessor {
 ///     fn process(&mut self, file: &mut PreprocessIterator) -> bool {
-///         if !skip && !self.prefix.is_empty() && !file.current().starts_with(&self.prefix) {
-///             file.reprocess_lines(vec![format!("{} {}", self.prefix, file.current)]);
-///             self.skip = true // reappend line and force reprocessing
+///         self.skip = !self.skip 
+///                  && !self.prefix.is_empty() 
+///                  && !file.current().starts_with(&self.prefix);
+///     
+///         if self.skip {
+///             file.reprocess_lines(vec![format!("{} {}", self.prefix, file.current())]);
 ///         }
-///         else {
-///             self.skip = false
-///         }
+///         
+///         self.skip
 ///     }
-/// 
+///     
 ///     fn activate(&mut self, params: Vec<String>, file: &mut PreprocessIterator) {
-///         if params.is_empty() {
-///             self.prefix.clear();
+///         if let Some(prefix) = params.into_iter().next() {
+///             self.prefix = prefix;
 ///         }
 ///         else {
-///             self.prefix = params[0];
+///             self.prefix.clear();
 ///         }
 ///     }
 /// }
@@ -132,3 +134,41 @@ impl Iterator for PreprocessIterator {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct PrefixPreprocessor {
+        prefix: String,
+        skip: bool
+    }
+    
+    impl Preprocessor for PrefixPreprocessor {
+        fn process(&mut self, file: &mut PreprocessIterator) -> bool {
+            self.skip = !self.skip 
+                     && !self.prefix.is_empty() 
+                     && !file.current().starts_with(&self.prefix);
+
+            if self.skip {
+                file.reprocess_lines(vec![format!("{} {}", self.prefix, file.current())]);
+            }
+            
+            self.skip
+        }
+    
+        fn activate(&mut self, params: Vec<String>, file: &mut PreprocessIterator) {
+            if let Some(prefix) = params.into_iter().next() {
+                self.prefix = prefix;
+            }
+            else {
+                self.prefix.clear();
+            }
+        }
+    }
+
+    #[test]
+    fn test_demo_preprocessor() {
+        
+    }
+}
