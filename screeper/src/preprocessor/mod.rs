@@ -1,4 +1,4 @@
-use std::io::{Read, BufReader, BufRead};
+use std::io::BufRead;
 
 /// An interface for preprocessor componants
 /// 
@@ -12,7 +12,7 @@ use std::io::{Read, BufReader, BufRead};
 /// }
 /// 
 /// impl Preprocessor for PrefixPreprocessor {
-///     fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>) -> bool {
+///     fn process(&mut self, file: &mut PreprocessIterator) -> bool {
 ///         if !skip && !self.prefix.is_empty() && !file.current().starts_with(&self.prefix) {
 ///             file.reprocess_lines(vec![format!("{} {}", self.prefix, file.current)]);
 ///             self.skip = true // reappend line and force reprocessing
@@ -22,7 +22,7 @@ use std::io::{Read, BufReader, BufRead};
 ///         }
 ///     }
 /// 
-///     fn activate<'a, R: Read>(&mut self, params: Vec<String>, file: &mut PreprocessIterator<'a, R>) {
+///     fn activate(&mut self, params: Vec<String>, file: &mut PreprocessIterator) {
 ///         if params.is_empty() {
 ///             self.prefix.clear();
 ///         }
@@ -35,7 +35,7 @@ use std::io::{Read, BufReader, BufRead};
 pub trait Preprocessor {
     /// Processes the current line the file is at. 
     /// Returns `true` if all preceding preprocessors should skip the current line.
-    fn process<'a, R: Read>(&mut self, file: &mut PreprocessIterator<'a, R>) -> bool;
+    fn process(&mut self, file: &mut PreprocessIterator) -> bool;
 
     /// Runs the preprocessor header associated with the preprocessor.
     /// 
@@ -43,7 +43,7 @@ pub trait Preprocessor {
     /// For example, if this was the activation line:
     /// `#<name> hello 1 "multi word"`
     /// params will contain: `["hello", "1", "multi word"]`
-    fn activate<'a, R: Read>(&mut self, params: Vec<String>, file: &mut PreprocessIterator<'a, R>);
+    fn activate(&mut self, params: Vec<String>, file: &mut PreprocessIterator);
 }
 
 /// An iterator used by preprocessors to iterate through lines of a file and insert new lines at the top.
@@ -64,8 +64,7 @@ pub trait Preprocessor {
 ///  */
 /// 
 /// let file = File::open("test.txt").unwrap();
-/// let mut reader = BufReader::new(file);
-/// let mut iter = PreprocessIterator::new(&mut reader);
+/// let mut iter = PreprocessIterator::new(Box::new(BufReader::new(file)));
 /// 
 /// for line in iter {
 ///     println!("{}", line);
@@ -87,14 +86,14 @@ pub trait Preprocessor {
 /// JOE MAMA!
 ///  */
 /// ```
-pub struct PreprocessIterator<'a, R: Read> {
+pub struct PreprocessIterator {
     current_line: String,
-    reader: &'a mut BufReader<R>,
+    reader: Box<dyn BufRead>,
     reprocess_lines: Vec<String>
 }
 
-impl<'a, R: Read> PreprocessIterator<'a, R> {
-    pub fn new(reader: &'a mut BufReader<R>) -> PreprocessIterator<R> {
+impl PreprocessIterator {
+    pub fn new(reader: Box<dyn BufRead>) -> PreprocessIterator {
         PreprocessIterator {
             current_line: String::new(),
             reprocess_lines: vec![],
@@ -114,7 +113,7 @@ impl<'a, R: Read> PreprocessIterator<'a, R> {
     }
 }
 
-impl<'a, R: Read> Iterator for PreprocessIterator<'a, R> {
+impl Iterator for PreprocessIterator {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
